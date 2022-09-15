@@ -25,7 +25,7 @@ TODO: 이름 써주세요!
 | [김효진](https://github.com/hy57in)   | 자바스크립트 아는척 할 수 있는 사람이 되보자 |
 | [김민지](https://github.com/mnxmnz)   | 책 내용 최대한 많이 흡수하기 🤔          |
 | [이병현](https://github.com/Tolluset) |                                   |
-|                                     |                                   |
+| [이상조](https://github.com/sjoleee)  | 벼락치기 하지않고 잘 읽기 📖            |
 |                                     |                                   |
 |                                     |                                   |
 |                                     |                                   |
