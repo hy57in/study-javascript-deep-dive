@@ -27,7 +27,7 @@ TODO: 이름 써주세요!
 | [이병현](https://github.com/Tolluset) | 읽으면서 궁금한 것들 많이 찾아보고 직접 해보기 🧐|
 | [이상조](https://github.com/sjoleee)  | 벼락치기 하지않고 잘 읽기 📖            |
 | [박상범](https://github.com/sangbooom) | 자바스크립트 고수가 목표입니다    |
-|                                     |                                   |
+| [김록원](https://github.com/RokwonK)  | 코드에 적용할 수 있게 실용적으로 공부하기🧑🏻‍💻 |
 |                                     |                                   |
 
 ## 🗓 스터디 일정
