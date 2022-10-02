@@ -9,8 +9,8 @@
 |         [김효진](https://github.com/hy57in)         |       [김민지](https://github.com/mnxmnz)       |      [이병현](https://github.com/Tolluset)       |      [이상조](https://github.com/sjoleee)       |
 |                자바스크립트 체화가 목표 🎅🏻                |             책 내용 최대한 많이 흡수하기 🤔              |      읽으면서 궁금한 것들<br />많이 찾아보고 직접 해보기 🧐       |              벼락치기 하지않고 잘 읽기 📖               |
 |  ![](https://github.com/sangbooom.png?size=100)  | ![](https://github.com/RokwonK.png?size=100) | ![](https://github.com/sujin-park.png?size=100) | ![](https://github.com/1000peach.png?size=100) |
-|       [박상범](https://github.com/sangbooom)        |      [김록원](https://github.com/RokwonK)       |      [박수진](https://github.com/sujin-park)       |      [천송아](https://github.com/1000peach)       |
-|                 자바스크립트 기본기 마스터가 목표 📚                 |        코드에 적용할 수 있게<br />실용적으로 공부하기🧑🏻‍💻         |                  |                            |
+|       [박상범](https://github.com/sangbooom)        |      [김록원](https://github.com/RokwonK)       |      [박수진](https://github.com/sujin-park)       |      [천승아](https://github.com/1000peach)       |
+|                 자바스크립트 기본기 마스터가 목표 📚                 |        코드에 적용할 수 있게<br />실용적으로 공부하기🧑🏻‍💻         |                  |     자바스크립트 기본과 원리<br />제대로 이해하기 🏃     |
 
 ## 스터디 시간
 
