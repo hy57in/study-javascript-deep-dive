@@ -1,0 +1,853 @@
+# 16장 프로퍼티 어트리뷰트
+
+## 16.1 내부 슬롯과 내부 메서드
+
+**내부 슬롯과 내부 메서드**
+
+자바스크립트 엔진의 구현 알고리즘을 설명하기 위해 ECMAScript 사양에서 사용하는 의사 프로퍼티(pseudo property) 의사 메서드 (pseudo method)로 ECMAScript 사양에 등장하는 이중 대괄호 `([[...]])` 로 감싼다.
+
+개발자가 직접 접근할 수 있도록 외부로 공개된 객체의 프로퍼티는 아니지만 일부 내부 슬롯과 일부 내부 메서드에 한하여 간접적으로 접근할 수 있는 수단을 제공한다.
+
+**예시**
+
+`__proto__`를 통해 `[[Prototype]]` 이라는 내부 슬롯에 접근할 수 있다.
+
+```javascript
+const o = {};
+
+// 내부 슬롯은 자바스크립트 엔진의 내부 로직이므로 직접 접근할 수 없다.
+o.[[Prototype]] // -> Uncaught SyntaxError: Unexpected token '['
+// 단, 일부 내부 슬롯과 내부 메서드에 한하여 간접적으로 접근할 수 있는 수단을 제공하기는 한다.
+o.__proto__ // -> Object.prototype
+```
+
+## 16.2 프로퍼티 어트리뷰트와 프로퍼티 디스크립터 객체
+
+**프로퍼티 어트리뷰트**
+
+- 자바스크립트 엔진이 관리하는 내부 상태 값인 내부 슬롯 `[[Value]], [[Writable]], [[Enumerable]], [[Configurable]]`
+- 직접 접근할 수 없지만 Object.getOwnPropertyDescriptor 메서드를 사용하여 간접적으로 확인할 수 있다.
+
+```javascript
+const person = {
+  name: 'Lee'
+};
+
+console.log(Object.getOwnPropertyDescriptor(person, 'name'));
+// {value: "Lee", writable: true, enumerable: true, configurable: true}
+```
+
+Object.getOwnPropertyDescriptor 메서드는 프로퍼티 어트리뷰트 정보를 제공하는 **프로퍼티 디스크립터 객체** 를 반환하고 존재하지 않는 프로퍼티 or 상속받은 프로퍼티는 undefined 가 반환된다.
+
+ES8 에서 도입된 Object.getOwnPropertyDescriptors 는 모든 프로퍼티 디스크립터 객체들을 반환한다.
+
+```javascript
+const person = {
+  name: 'Lee'
+};
+
+// 프로퍼티 동적 생성
+person.age = 20;
+
+console.log(Object.getOwnPropertyDescriptors(person));
+/*
+{
+  name: {value: "Lee", writable: true, enumerable: true, configurable: true},
+  age: {value: 20, writable: true, enumerable: true, configurable: true}
+}
+*/
+```
+
+## 16.3 데이터 프로퍼티와 접근자 프로퍼티
+
+### 16.3.1 데이터 프로퍼티
+
+- 키와 값으로 구성된 일반적인 프로퍼티
+- [[Value]], [[Writable]], [[Enumerable]], [[Configurable]] 과 같은 프로퍼티 어트리뷰트를 갖는다.
+
+```javascript
+const person = {
+  name: 'Lee'
+};
+
+// 프로퍼티 동적 생성
+person.age = 20;
+
+console.log(Object.getOwnPropertyDescriptors(person));
+/*
+{
+  name: {value: "Lee", writable: true, enumerable: true, configurable: true},
+  age: {value: 20, writable: true, enumerable: true, configurable: true}
+}
+*/
+```
+
+프로퍼티가 생성될 때 value 의 값은 프로퍼티 값으로 초기화되고, **writable, enumerable, configurable 은 동적으로 추가해도 true 로 초기화된다.**
+
+
+### 16.3.2 접근자 프로퍼티
+
+- 자체적으로 값을 갖지 않고 다른 데이터 프로퍼티의 값을 읽거나 저장할 때 호출되는 접근자 함수로 구성된 프로퍼티
+- [[Get]], [[Set]], [[Enumerable]], [[Configurable]]
+- 접근자 함수는 getter/setter 함수라고도 한다.
+
+```javascript
+const person = {
+  // 데이터 프로퍼티
+  firstName: 'Ungmo',
+  lastName: 'Lee',
+
+  // fullName은 접근자 함수로 구성된 접근자 프로퍼티다.
+  // getter 함수
+  get fullName() {
+    return `${this.firstName} ${this.lastName}`;
+  },
+  // setter 함수
+  set fullName(name) {
+    // 배열 디스트럭처링 할당: "31.1 배열 디스트럭처링 할당" 참고
+    [this.firstName, this.lastName] = name.split(' ');
+  }
+};
+
+// 데이터 프로퍼티를 통한 프로퍼티 값의 참조.
+console.log(person.firstName + ' ' + person.lastName); // Ungmo Lee
+
+// 접근자 프로퍼티를 통한 프로퍼티 값의 저장
+// 접근자 프로퍼티 fullName에 값을 저장하면 setter 함수가 호출된다.
+person.fullName = 'Heegun Lee';
+console.log(person); // {firstName: "Heegun", lastName: "Lee"}
+
+// 접근자 프로퍼티를 통한 프로퍼티 값의 참조
+// 접근자 프로퍼티 fullName에 접근하면 getter 함수가 호출된다.
+console.log(person.fullName); // Heegun Lee
+
+// firstName은 데이터 프로퍼티다.
+// 데이터 프로퍼티는 [[Value]], [[Writable]], [[Enumerable]], [[Configurable]] 프로퍼티 어트리뷰트를 갖는다.
+let descriptor = Object.getOwnPropertyDescriptor(person, 'firstName');
+console.log(descriptor);
+// {value: "Heegun", writable: true, enumerable: true, configurable: true}
+
+// fullName은 접근자 프로퍼티다.
+// 접근자 프로퍼티는 [[Get]], [[Set]], [[Enumerable]], [[Configurable]] 프로퍼티 어트리뷰트를 갖는다.
+descriptor = Object.getOwnPropertyDescriptor(person, 'fullName');
+console.log(descriptor);
+// {get: ƒ, set: ƒ, enumerable: true, configurable: true}
+```
+
+<aside>
+
+💡 **프로토타입** 이란 어떤 객체의 상위(부모) 객체의 역할을 하는 객체로 하위 객체에게 자신의 프로퍼티와 메서드를 상속한다.
+
+</aside>
+
+## 16.4 프로퍼티 정의
+
+**새로운 프로퍼티를 추가하면서 프로퍼티 어트리뷰트를 명시적으로 정의**하거나 **기존 프로퍼티의 프로퍼티 어트리뷰트를 재정의**하는 것을 말한다.
+
+`Object.defineProperty` 메서드를 사용하면 프로퍼티의 어트리뷰트를 정의할 수 있다.
+
+```javascript
+const person = {};
+
+// 데이터 프로퍼티 정의
+Object.defineProperty(person, 'firstName', {
+  value: 'Ungmo',
+  writable: true,
+  enumerable: true,
+  configurable: true
+});
+
+Object.defineProperty(person, 'lastName', {
+  value: 'Lee'
+});
+
+let descriptor = Object.getOwnPropertyDescriptor(person, 'firstName');
+console.log('firstName', descriptor);
+// firstName {value: "Ungmo", writable: true, enumerable: true, configurable: true}
+
+// 디스크립터 객체의 프로퍼티를 누락시키면 undefined, false가 기본값이다.
+descriptor = Object.getOwnPropertyDescriptor(person, 'lastName');
+console.log('lastName', descriptor);
+// lastName {value: "Lee", writable: false, enumerable: false, configurable: false}
+
+// [[Enumerable]]의 값이 false인 경우
+// 해당 프로퍼티는 for...in 문이나 Object.keys 등으로 열거할 수 없다.
+// lastName 프로퍼티는 [[Enumerable]]의 값이 false이므로 열거되지 않는다.
+console.log(Object.keys(person)); // ["firstName"]
+
+// [[Writable]]의 값이 false인 경우 해당 프로퍼티의 [[Value]]의 값을 변경할 수 없다.
+// lastName 프로퍼티는 [[Writable]]의 값이 false이므로 값을 변경할 수 없다.
+// 이때 값을 변경하면 에러는 발생하지 않고 무시된다.
+person.lastName = 'Kim';
+
+// [[Configurable]]의 값이 false인 경우 해당 프로퍼티를 삭제할 수 없다.
+// lastName 프로퍼티는 [[Configurable]]의 값이 false이므로 삭제할 수 없다.
+// 이때 프로퍼티를 삭제하면 에러는 발생하지 않고 무시된다.
+delete person.lastName;
+
+// [[Configurable]]의 값이 false인 경우 해당 프로퍼티를 재정의할 수 없다.
+// Object.defineProperty(person, 'lastName', { enumerable: true });
+// Uncaught TypeError: Cannot redefine property: lastName
+
+descriptor = Object.getOwnPropertyDescriptor(person, 'lastName');
+console.log('lastName', descriptor);
+// lastName {value: "Lee", writable: false, enumerable: false, configurable: false}
+
+// 접근자 프로퍼티 정의
+Object.defineProperty(person, 'fullName', {
+  // getter 함수
+  get() {
+    return `${this.firstName} ${this.lastName}`;
+  },
+  // setter 함수
+  set(name) {
+    [this.firstName, this.lastName] = name.split(' ');
+  },
+  enumerable: true,
+  configurable: true
+});
+
+descriptor = Object.getOwnPropertyDescriptor(person, 'fullName');
+console.log('fullName', descriptor);
+// fullName {get: ƒ, set: ƒ, enumerable: true, configurable: true}
+
+person.fullName = 'Heegun Lee';
+console.log(person); // {firstName: "Heegun", lastName: "Lee"}
+```
+
+`Object.defineProperty` 메서드는 한번에 하나의 프로퍼티만 정의할 수 있고, Object.defineProperties 메서드를 사용하면 여러 개의 프로퍼티를 한 번에 정의할 수 있다.
+
+- value: undefined
+- get: undefined
+- set: undefined
+- writable: false
+- enmerable: false
+- configurable: false
+
+<br />
+
+## 16.5 객체 변경 방지
+
+자바스크립트는 객체의 변경을 방지하는 다양한 메서드를 제공한다.
+
+### 16.5.1 객체 확장 금지
+
+`Object.preventExtensions` 메서드는 객체의 확장을 금지하고, **확장이 금지된 객체는 프로퍼티 추가가 금지된다.**
+
+```javascript
+const person = { name: 'Lee' };
+
+// person 객체는 확장이 금지된 객체가 아니다.
+console.log(Object.isExtensible(person)); // true
+
+// person 객체의 확장을 금지하여 프로퍼티 추가를 금지한다.
+Object.preventExtensions(person);
+
+// person 객체는 확장이 금지된 객체다.
+console.log(Object.isExtensible(person)); // false
+
+// 프로퍼티 추가가 금지된다.
+person.age = 20; // 무시. strict mode에서는 에러
+console.log(person); // {name: "Lee"}
+
+// 프로퍼티 추가는 금지되지만 삭제는 가능하다.
+delete person.name;
+console.log(person); // {}
+
+// 프로퍼티 정의에 의한 프로퍼티 추가도 금지된다.
+Object.defineProperty(person, 'age', { value: 20 });
+// TypeError: Cannot define property age, object is not extensible
+```
+
+<br />
+
+### 16.5.2 객체 밀봉
+
+`Object.seal` 메서드는 객체를 밀봉한다. **밀봉된 객체는 읽기와 쓰기만 가능하다.**
+`Object.isSealed` 메서드로 밀봉된 객체인지 확인할 수 있다.
+
+```javascript
+const person = { name: 'Lee' };
+
+// person 객체는 밀봉(seal)된 객체가 아니다.
+console.log(Object.isSealed(person)); // false
+
+// person 객체를 밀봉(seal)하여 프로퍼티 추가, 삭제, 재정의를 금지한다.
+Object.seal(person);
+
+// person 객체는 밀봉(seal)된 객체다.
+console.log(Object.isSealed(person)); // true
+
+// 밀봉(seal)된 객체는 configurable이 false다.
+console.log(Object.getOwnPropertyDescriptors(person));
+/*
+{
+  name: {value: "Lee", writable: true, enumerable: true, configurable: false},
+}
+*/
+
+// 프로퍼티 추가가 금지된다.
+person.age = 20; // 무시. strict mode에서는 에러
+console.log(person); // {name: "Lee"}
+
+// 프로퍼티 삭제가 금지된다.
+delete person.name; // 무시. strict mode에서는 에러
+console.log(person); // {name: "Lee"}
+
+// 프로퍼티 값 갱신은 가능하다.
+person.name = 'Kim';
+console.log(person); // {name: "Kim"}
+
+// 프로퍼티 어트리뷰트 재정의가 금지된다.
+Object.defineProperty(person, 'name', { configurable: true });
+// TypeError: Cannot redefine property: name
+```
+
+
+<br />
+
+### 16.5.3 객체 동결
+
+`Object.freeze` 메서드는 객체를 동결하는데 **동결된 객체는 읽기만 가능하다.**
+`Object.isFrozen` 메서드로 동결된 객체인지 확인할 수 있다.
+
+<br />
+
+### 16.5.4 불변 객체
+
+변경 방지 메서드들은 **얕은 변경 방지로 직속 프로퍼티만 변경이 방지되고 중첩 객체는 영향을 주지 못한다.**
+
+-> 객체를 값으로 갖는 모든 프로퍼티에 대해 재귀적으로 `Object.freeze` 메서드로 호출해야 한다.
+
+```javascript
+function deepFreeze(target) {
+  // 객체가 아니거나 동결된 객체는 무시하고 객체이고 동결되지 않은 객체만 동결한다.
+  if (target && typeof target === 'object' && !Object.isFrozen(target)) {
+    Object.freeze(target);
+    /*
+      모든 프로퍼티를 순회하며 재귀적으로 동결한다.
+      Object.keys 메서드는 객체 자신의 열거 가능한 프로퍼티 키를 배열로 반환한다.
+      ("19.15.2. Object.keys/values/entries 메서드" 참고)
+      forEach 메서드는 배열을 순회하며 배열의 각 요소에 대하여 콜백 함수를 실행한다.
+      ("27.9.2. Array.prototype.forEach" 참고)
+    */
+    Object.keys(target).forEach(key => deepFreeze(target[key]));
+  }
+  return target;
+}
+
+const person = {
+  name: 'Lee',
+  address: { city: 'Seoul' }
+};
+
+// 깊은 객체 동결
+deepFreeze(person);
+
+console.log(Object.isFrozen(person)); // true
+// 중첩 객체까지 동결한다.
+console.log(Object.isFrozen(person.address)); // true
+
+person.address.city = 'Busan';
+console.log(person); // {name: "Lee", address: {city: "Seoul"}}
+```
+
+<br />
+
+# 17장 생성자 함수에 의한 객체 생성
+
+## 17.1 Object 생성자 함수
+
+new 연산자와 함께 Object 생성자 함수를 호출하면 빈 객체를 생성하여 반환한다.
+또한, 객체 리터럴을 이용하여 객체를 생성할 수 있다.
+
+<aside>
+
+💡 **생성자 함수**란 new 연산자와 함께 호출하여 객체(인스턴스)를 생성하는 함수이다.
+Object 생성자 함수 외에도 String, Number, Boolean, Function, Array, Date, RegExp, Promise 등 빌트인 생성자 함수를 제공한다.
+
+</aside>
+
+```javascript
+// 빈 객체의 생성
+const person = new Object();
+
+// 프로퍼티 추가
+person.name = 'Lee';
+person.sayHello = function () {
+  console.log('Hi! My name is ' + this.name);
+};
+
+console.log(person); // {name: "Lee", sayHello: ƒ}
+person.sayHello(); // Hi! My name is Lee
+```
+
+<br />
+
+## 17.2 생성자 함수
+
+### 17.2.1 객체 리터럴에 의한 객체 생성 방식의 문제점
+
+동일한 프로퍼티를 갖는 객체를 여러개 생성해야 하는 경우 매번 같은 프로퍼티를 기술해야 하기 때문에 비효율적이다.
+
+```javascript
+const circle1 = {
+  radius: 5,
+  getDiameter() {
+    return 2 * this.radius;
+  }
+};
+
+console.log(circle1.getDiameter()); // 10
+
+const circle2 = {
+  radius: 10,
+  getDiameter() {
+    return 2 * this.radius;
+  }
+};
+
+console.log(circle2.getDiameter()); // 20
+```
+
+### 17.2.2 생성자 함수에 의한 객체 생성 방식의 장점
+
+인스턴스를 생성하기 위한 템플릿처럼 생성자 함수를 사용하여 프로퍼티 구조가 동일한 객체 여러 개를 간편하게 생성할 수 있다.
+
+```javascript
+// 생성자 함수
+function Circle(radius) {
+  // 생성자 함수 내부의 this는 생성자 함수가 생성할 인스턴스를 가리킨다.
+  this.radius = radius;
+  this.getDiameter = function () {
+    return 2 * this.radius;
+  };
+}
+
+// 인스턴스의 생성
+const circle1 = new Circle(5);  // 반지름이 5인 Circle 객체를 생성
+const circle2 = new Circle(10); // 반지름이 10인 Circle 객체를 생성
+
+console.log(circle1.getDiameter()); // 10
+console.log(circle2.getDiameter()); // 20
+```
+
+<aside>
+
+💡 this 는 객체 자신의 프로퍼티나 메서드를 참조하기 위한 자기 참조 변수로, this 바인딩은 **함수 호출 방식에 따라 동적으로 결정**된다.
+
+</aside>
+
+<br />
+
+### 17.2.3 생성자 함수의 인스턴스 생성 과정
+
+**인스턴스를 생성**하는 것과 **생성된 인스턴스를 초기화**하는 것으로 생성하는 것은 필수이고, 초기화하는 것은 옵션이다.
+
+**1. 인스턴스 생성과 this 바인딩**
+
+암묵적으로 빈 객체가 생성되고, this 에 바인딩된다.
+
+```javascript
+function Circle(radius) {
+  // 1. 암묵적으로 빈 객체가 생성되고 this에 바인딩된다.
+  console.log(this); // Circle {}
+
+  this.radius = radius;
+  this.getDiameter = function () {
+    return 2 * this.radius;
+  };
+}
+```
+
+<aside>
+
+💡 **바인딩**이란 식별자와 값을 연결하는 과정이다.
+
+</aside>
+
+**2. 인스턴스 초기화**
+
+this 에 바인딩되어 있는 인스턴스를 초기화한다. 
+
+```javascript
+function Circle(radius) {
+  // 1. 암묵적으로 인스턴스가 생성되고 this에 바인딩된다.
+
+  // 2. this에 바인딩되어 있는 인스턴스를 초기화한다.
+  this.radius = radius;
+  this.getDiameter = function () {
+    return 2 * this.radius;
+  };
+}
+```
+
+**3. 인스턴스 반환**
+
+생성자 함수 내부의 처리가 끝나면 인스턴스가 바인딩된 this 가 암묵적으로 반환된다.
+
+```javascript
+function Circle(radius) {
+  // 1. 암묵적으로 인스턴스가 생성되고 this에 바인딩된다.
+
+  // 2. this에 바인딩되어 있는 인스턴스를 초기화한다.
+  this.radius = radius;
+  this.getDiameter = function () {
+    return 2 * this.radius;
+  };
+
+  // 3. 완성된 인스턴스가 바인딩된 this가 암묵적으로 반환된다
+}
+
+// 인스턴스 생성. Circle 생성자 함수는 암묵적으로 this를 반환한다.
+const circle = new Circle(1);
+console.log(circle); // Circle {radius: 1, getDiameter: ƒ}
+```
+
+**this 가 아닌 다른 객체를 명시적으로 반환하면 명시한 객체가 반환**된다. **생성자 함수 내부에서 return 문을 반드시 생략**해야 한다.
+
+### 17.2.4 내부 메서드 [[Call]] 과 [[Construct]]
+
+일반 객체는 호출할 수 없지만 함수는 호출할 수 있다.
+
+[[Call]]
+- 내부 메서드 [[Call]] 을 갖는 함수 객체를 callable 이라 한다.
+- 함수 객체는 반드시 callable 이어야 한다.
+
+[[Construct]]
+- 내부 메서드 [[Construct]] 를 갖는 함수를 constructor, 갖지 않는 함수 객체를 non-constructor 라고 한다.
+- 함수 객체는 constructor 일 수도 있고, non-constructor 일 수도 있다.
+
+
+### 17.2.5 constructor / non-constructor
+
+**constructor**
+
+함수 선언문, 함수 표현식, 클래스 (클래스도 함수다)
+
+**non-constructor**
+
+메서드 (ES6 메서드 축약 표현), 화살표 함수
+
+```javascript
+// 일반 함수 정의: 함수 선언문, 함수 표현식
+function foo() {}
+const bar = function () {};
+// 프로퍼티 x의 값으로 할당된 것은 일반 함수로 정의된 함수다. 이는 메서드로 인정하지 않는다.
+const baz = {
+  x: function () {}
+};
+
+// 일반 함수로 정의된 함수만이 constructor이다.
+new foo();   // -> foo {}
+new bar();   // -> bar {}
+new baz.x(); // -> x {}
+
+// 화살표 함수 정의
+const arrow = () => {};
+
+new arrow(); // TypeError: arrow is not a constructor
+
+// 메서드 정의: ES6의 메서드 축약 표현만을 메서드로 인정한다.
+const obj = {
+  x() {}
+};
+
+new obj.x(); // TypeError: obj.x is not a constructor
+```
+
+함수를 일반 함수로서 호출하면 내부 메서드 [[Call]] 이 호출되고, new 연산자와 함께 생성자 함수로서 호출하면 내부 메서드 [[Construct]] 가 호출된다.
+
+-> non-constructor 인 함수 객체를 생성자 함수로 호출하면 에러가 발생한다.
+
+```javascript
+function foo() {}
+
+// 일반 함수로서 호출
+// [[Call]]이 호출된다. 모든 함수 객체는 [[Call]]이 구현되어 있다.
+foo();
+
+// 생성자 함수로서 호출
+// [[Construct]]가 호출된다. 이때 [[Construct]]를 갖지 않는다면 에러가 발생한다.
+new foo();
+```
+
+### 17.2.6 new 연산자
+
+new 연산자와 함께 함수를 호출하면 함수 객체의 내부 메서드 `[[Construct]]` 가 호출된다.
+
+```javascript
+// 생성자 함수로서 정의하지 않은 일반 함수
+function add(x, y) {
+  return x + y;
+}
+
+// 생성자 함수로서 정의하지 않은 일반 함수를 new 연산자와 함께 호출
+let inst = new add();
+// 함수가 객체를 반환하지 않았으므로 반환문이 무시된다. 따라서 빈 객체가 생성되어 반환된다.
+console.log(inst); // {}
+
+// 객체를 반환하는 일반 함수
+function createUser(name, role) {
+  return { name, role };
+}
+
+// 생성자 함수로서 정의하지 않은 일반 함수를 new 연산자와 함께 호출
+inst = new createUser('Lee', 'admin');
+// 함수가 생성한 객체를 반환한다.
+console.log(inst); // {name: "Lee", role: "admin"}
+```
+
+new 연산자 없이 생성자 함수를 호출하면 일반 함수로 호출되어 함수 객체의 내부 메서드인 `[[Call]]`이 호출된다.
+
+### 17.2.7 new.target
+
+파스칼 케이스 컨벤션을 사용하여 호출하더라도 실수가 발생할 수 있기 때문에 ES6 에서는 **new.target** 을 지원한다.
+
+**new 연산자와 함께 생성자 함수로서 호출되면 함수 내부의 new.target 은 자신을 가리키고, 없이 호출하면 undefined** 가 된다.
+
+```javascript
+// 생성자 함수
+function Circle(radius) {
+  // 이 함수가 new 연산자와 함께 호출되지 않았다면 new.target은 undefined다.
+  if (!new.target) {
+    // new 연산자와 함께 생성자 함수를 재귀 호출하여 생성된 인스턴스를 반환한다.
+    return new Circle(radius);
+  }
+
+  this.radius = radius;
+  this.getDiameter = function () {
+    return 2 * this.radius;
+  };
+}
+
+// new 연산자 없이 생성자 함수를 호출하여도 new.target을 통해 생성자 함수로서 호출된다.
+const circle = Circle(5);
+console.log(circle.getDiameter());
+```
+
+위 부분은 IE 에서는 지원하지 않기 때문에 **스코프 세이프 생성자 패턴**을 사용할 수 있다.
+
+```javascript
+// 생성자 함수
+function Circle(radius) {
+  // 이 함수가 new 연산자와 함께 호출되지 않았다면 new.target은 undefined다.
+  if (!new.target) {
+    // new 연산자와 함께 생성자 함수를 재귀 호출하여 생성된 인스턴스를 반환한다.
+    return new Circle(radius);
+  }
+
+  this.radius = radius;
+  this.getDiameter = function () {
+    return 2 * this.radius;
+  };
+}
+
+// new 연산자 없이 생성자 함수를 호출하여도 new.target을 통해 생성자 함수로서 호출된다.
+const circle = Circle(5);
+console.log(circle.getDiameter());
+```
+
+<aside>
+💡 Object, Function 생성자 함수는 new 연산자 없이 호출해도 동일하게 동작하지만, **String, Number, Boolean 생성자 함수는 new 연산자와 함께 호출했을 때는 객체를 반환하고 없이 호출하면 문자열, 숫자, boolean 을 반환**한다.
+
+</aside>
+
+<br />
+
+# 18장 함수와 일급 객체
+
+## 18.1 일급 객체
+
+**일급 객체**
+- 무명의 리터럴로 생성할 수 있다. 런타임에 생성이 가능하다.
+- 변수나 자료구조(객체, 배열 등)에 저장할 수 있다.
+- 함수의 매개변수에 전달할 수 있다.
+- 함수의 반환값으로 사용할 수 있다.
+
+-> 자바스크립트의 함수는 **일급 객체**이다.
+
+```javascript
+// 1. 함수는 무명의 리터럴로 생성할 수 있다.
+// 2. 함수는 변수에 저장할 수 있다.
+// 런타임(할당 단계)에 함수 리터럴이 평가되어 함수 객체가 생성되고 변수에 할당된다.
+const increase = function (num) {
+  return ++num;
+};
+
+const decrease = function (num) {
+  return --num;
+};
+
+// 2. 함수는 객체에 저장할 수 있다.
+const auxs = { increase, decrease };
+
+// 3. 함수의 매개변수에게 전달할 수 있다.
+// 4. 함수의 반환값으로 사용할 수 있다.
+function makeCounter(aux) {
+  let num = 0;
+
+  return function () {
+    num = aux(num);
+    return num;
+  };
+}
+
+// 3. 함수는 매개변수에게 함수를 전달할 수 있다.
+const increaser = makeCounter(auxs.increase);
+console.log(increaser()); // 1
+console.log(increaser()); // 2
+
+// 3. 함수는 매개변수에게 함수를 전달할 수 있다.
+const decreaser = makeCounter(auxs.decrease);
+console.log(decreaser()); // -1
+console.log(decreaser()); // -2
+```
+
+일급 객체로서 함수가 가지는 특징으로 인해 함수형 프로그래밍을 가능케 하는 자바스크립트의 장점 중 하나이다.
+
+<br />
+
+## 18.2 함수 객체의 프로퍼티
+
+브라우저 콘솔에 `console.dir` 메서드를 사용하여 함수 객체의 내부를 들여다볼 수 있다.
+
+<br />
+
+### 18.2.1 arguments 프로퍼티
+
+arguments 객체는 **함수 호출 시 전달된 인수들의 정보를 담고 있는 iterable 유사 배열 객체**이며 함수 내부에서 지역 변수로 사용된다.
+
+arguments 객체는 배열 형태로 인자 정보를 담고 있지만, **유사 배열 객체**이다.
+
+<aside>
+
+💡 ES6 에서 도입된 이터레이션 프로토콜을 준수하면 순회 가능한 자료구조인 이터러블이 된다. arguments 는 ES5 에서는 유사 배열 객체였지만, ES6 부터는 유사 배열 객체이면서 동시에 이터러블이다.
+
+</aside>
+
+
+```javascript
+function sum() {
+  // arguments 객체를 배열로 변환
+  const array = Array.prototype.slice.call(arguments);
+  return array.reduce(function (pre, cur) {
+    return pre + cur;
+  }, 0);
+}
+
+console.log(sum(1, 2));          // 3
+console.log(sum(1, 2, 3, 4, 5)); // 15
+```
+
+배열 메서드를 사용하기 위해 위와 같이 Function.prototype.call, Function.prototype.apply 를 사용해 간접 호출해야 한다.
+
+```javascript
+// ES6 Rest parameter
+function sum(...args) {
+  return args.reduce((pre, cur) => pre + cur, 0);
+}
+
+console.log(sum(1, 2));          // 3
+console.log(sum(1, 2, 3, 4, 5)); // 15
+```
+
+다만 ES6 에서는 Rest parameter 가 도입되었다.
+
+<br />
+
+### 18.2.2 caller 프로퍼티
+
+ECMAScript 사양에 포함되지 않은 비표준 프로퍼티로 함수 객체의 caller 프로퍼티는 함수 자신을 호출한 함수를 가리킨다.
+
+<br />
+
+### 18.2.3 length 프로퍼티
+
+length 프로퍼티는 함수를 정의할 때 선언한 매개변수의 개수이다.
+
+**특징**
+- arguments 객체의 length 와 함수 객체의 length 값은 다를 수 있다.
+- arguments 객체의 length 는 인자의 개수, 함수 객체의 length 는 매개변수의 개수
+
+```javascript
+function foo() {}
+console.log(foo.length); // 0
+
+function bar(x) {
+  return x;
+}
+console.log(bar.length); // 1
+
+function baz(x, y) {
+  return x * y;
+}
+console.log(baz.length); // 2
+```
+<br />
+
+
+### 18.2.4 name 프로퍼티
+
+name 프로퍼티는 ES6 이전까지는 비표준이었다가 ES6 에서 정식 표준이 되었고, ES5 와 ES6 에서 다르게 동작한다.
+-> 익명 함수 표현식의 경우 ES5 에서는 빈 문자열을 갖지만, ES6 에서는 함수 객체를 가리키는 식별자를 값으로 갖는다.
+
+```
+// 기명 함수 표현식
+var namedFunc = function foo() {};
+console.log(namedFunc.name); // foo
+
+// 익명 함수 표현식
+var anonymousFunc = function() {};
+// ES5: name 프로퍼티는 빈 문자열을 값으로 갖는다.
+// ES6: name 프로퍼티는 함수 객체를 가리키는 변수 이름을 값으로 갖는다.
+console.log(anonymousFunc.name); // anonymousFunc
+
+// 함수 선언문(Function declaration)
+function bar() {}
+console.log(bar.name); // bar
+```
+
+<br />
+
+### 18.2.5 __proto__ 접근자 프로퍼티
+
+[[Prototype]] 내부 슬롯이 가리키는 프로토타입 객체에 접근하기 위해 사용하는 접근자 프로퍼티이다.
+[[Prototype]] 내부 슬롯에 직접 접근할 수 없기 때문에 `__proto__` 접근자 프로퍼티를 통해 간접적으로 프로토타입 객체에 접근할 수 있다.
+
+```javascript
+const obj = { a: 1 };
+
+// 객체 리터럴 방식으로 생성한 객체의 프로토타입 객체는 Object.prototype이다.
+console.log(obj.__proto__ === Object.prototype); // true
+
+// 객체 리터럴 방식으로 생성한 객체는 프로토타입 객체인 Object.prototype의 프로퍼티를 상속받는다.
+// hasOwnProperty 메서드는 Object.prototype의 메서드다.
+console.log(obj.hasOwnProperty('a'));         // true
+console.log(obj.hasOwnProperty('__proto__')); // false
+```
+
+
+<aside>
+
+💡 **hasOwnProperty**
+는 인수로 전달받은 프로퍼티 키가 객체 고유의 프로퍼티 키인 경우에만 true 를 반환하고, 상속받은 프로퍼티 키인 경우 false 를 반환한다.
+
+</aside>
+
+<br />
+
+### 18.2.6 prototype 프로퍼티
+
+**생성자 함수로 호출할 수 있는 함수 객체, 즉 constructor 만이 소유하는 프로퍼티**이다.
+일반 객체와 생성자 함수로 호출할 수 없는 non-constructor 에는 prototype 이 없다.
+
+```javascript
+// 함수 객체는 prototype 프로퍼티를 소유한다.
+(function () {}).hasOwnProperty('prototype'); // -> true
+
+// 일반 객체는 prototype 프로퍼티를 소유하지 않는다.
+({}).hasOwnProperty('prototype'); // -> false
+```
+
+prototype 프로퍼티는 함수가 객체를 생성하는 생성자 함수로 호출될 때 생성자 함수가 생성할 인스턴스의 프로토타입 객체를 가리킨다.
